@@ -1,16 +1,52 @@
 version: '3.8'
 services:
+  rabbitmq:
+    container_name: rabbitmq
+    image: rabbitmq:3.9.11-management-alpine
+    #      environment:
+    #        RABBITMQ_ERLANG_COOKIE: 'secret cookie here'
+    volumes:
+      - ./db-data:/var/lib/rabbitmq
+    ports:
+      - "5672:5672" # access port
+      - "15672:15672" #management port
+
+  db:
+    container_name: mysql
+    image: mysql:5.7.22
+    restart: always
+    environment:
+      MYSQL_DATABASE: admin
+      MYSQL_USER: root
+      MYSQL_PASSWORD: root
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - .dbdata:/var/lib/mysql # reflect the data to a folder
+    ports:
+      - "33066:3306"
+    depends_on:
+      - rabbitmq
+
   backend:
+    container_name: admin_backend
+    restart: always
     build:
       context: .
       dockerfile: Dockerfile
-    command: 'python manage.py runserver 0.0.0.0:8000'
+    environment:
+      RABBIT_HOST: "rabbitmq"
+      RABBIT_PORT: "5672"
+    command: [ 'sh', '-c',
+        'until wget http://guest:guest@rabbitmq:15672/api/aliveness-test/%2F;
+        do echo waiting for rabbitmq; sleep 2; done; python manage.py runserver 0.0.0.0:8000' ]
+
     ports:
-      - 8000:8000
+      - "8000:8000"
     volumes:
       - .:/app
     depends_on:
       - db
+      - rabbitmq
 
 #  queue:
 #    build:
@@ -20,15 +56,3 @@ services:
 #    depends_on:
 #      - db
 
-  db:
-    image: mysql:5.7.22
-    restart: always # always restart the container
-    environment:
-      MYSQL_DATABASE: admin
-      MYSQL_USER: root
-      MYSQL_PASSWORD: root
-      MYSQL_ROOT_PASSWORD: root
-    volumes:
-      - .dbdata:/var/lib/mysql # reflect the data to a folder
-    ports:
-      - 33066:3306

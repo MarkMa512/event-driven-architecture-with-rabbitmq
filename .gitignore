@@ -3,6 +3,10 @@ main/.dbdata/
 admin/.dbdata/
 .idea/
 
+*.sqlite3
+
+*%2F*
+
 *pycache*
 # Numerous always-ignore extensions
 *.diff
