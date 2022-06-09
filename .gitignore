@@ -6,6 +6,8 @@ admin/.dbdata/
 *.sqlite3
 
 *%2F*
+.db-data/
+.rabbitmq-data/
 
 *pycache*
 # Numerous always-ignore extensions
