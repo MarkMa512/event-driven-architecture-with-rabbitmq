@@ -24,3 +24,11 @@ services:
       - .dbdata:/var/lib/mysql # reflect the data to a folder
     ports:
       - 33067:3306
+
+  queue:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: 'python -u consumer.py'
+    depends_on:
+      - db

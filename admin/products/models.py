@@ -1,6 +1,6 @@
 from django.db import models
 
-
+# https://www.youtube.com/watch?v=ddrucr_aAzA&t=1330s
 # Create your models here.
 class Product(models.Model):
     title = models.CharField(max_length=200)

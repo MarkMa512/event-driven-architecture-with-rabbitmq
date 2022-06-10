@@ -1,0 +1,108 @@
+version: '3.8'
+services:
+  rabbitmq:
+    container_name: rabbitmq
+    image: rabbitmq:3.9.11-management-alpine
+    #      environment:
+    #        RABBITMQ_ERLANG_COOKIE: 'secret cookie here'
+    volumes:
+      - .rabbitmq-data:/var/lib/rabbitmq
+    ports:
+      - "5672:5672" # access port
+      - "15672:15672" #management port
+
+  admin_db:
+    container_name: admin_db
+    image: mysql:5.7.22
+    restart: always
+    environment:
+      MYSQL_DATABASE: admin
+      MYSQL_USER: root
+      MYSQL_PASSWORD: root
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - ./admin/.db-data:/var/lib/mysql # reflect the data to a folder
+    ports:
+      - "33066:3306"
+    depends_on:
+      - rabbitmq
+
+  admin_backend:
+    container_name: admin_backend
+#    restart: always
+    build:
+      context: admin
+      dockerfile: Dockerfile
+    environment:
+      RABBIT_HOST: "rabbitmq"
+      RABBIT_PORT: "5672"
+    command: [ 'sh', '-c',
+        'until wget http://guest:guest@rabbitmq:15672/api/aliveness-test/%2F;
+        do echo waiting for rabbitmq; sleep 2; done; python manage.py runserver 0.0.0.0:8000' ]
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./admin:/app
+    depends_on:
+      - admin_db
+      - rabbitmq
+
+  admin_queue:
+    container_name: admin_queue
+    environment:
+      RABBIT_HOST: "rabbitmq"
+      RABBIT_PORT: "5672"
+    build:
+      context: admin
+      dockerfile: Dockerfile
+#    command: 'python -u consumer.py'
+    depends_on:
+      - admin_db
+      - rabbitmq
+
+  main_db:
+    container_name: main_db
+    image: mysql:5.7.22
+    restart: always # always restart the container
+    environment:
+      MYSQL_DATABASE: main
+      MYSQL_USER: root
+      MYSQL_PASSWORD: root
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - ./main/.db-data:/var/lib/mysql # reflect the data to a folder
+    ports:
+      - "33067:3306"
+
+  main_backend:
+    container_name: main_backend
+    build:
+      context: main
+      dockerfile: Dockerfile
+    environment:
+      RABBIT_HOST: "rabbitmq"
+      RABBIT_PORT: "5672"
+      FLASK_APP: "main"
+    command: [ 'sh', '-c',
+        'until wget http://guest:guest@rabbitmq:15672/api/aliveness-test/%2F;
+        do echo waiting for rabbitmq; sleep 2; done; python main.py' ]
+    ports:
+      - "8001:5000"
+    volumes:
+      - ./main:/app
+    depends_on:
+      - main_db
+      - rabbitmq
+
+  main_queue:
+    container_name: main_queue
+    environment:
+      RABBIT_HOST: "rabbitmq"
+      RABBIT_PORT: "5672"
+    build:
+      context: main
+      dockerfile: Dockerfile
+#    command: 'python -u consumer.py'
+    depends_on:
+      - main_db
+      - rabbitmq

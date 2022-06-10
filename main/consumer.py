@@ -1,5 +1,6 @@
-import pika
 from os import environ
+
+import pika
 
 hostname = environ.get('RABBIT_HOST') or 'rabbitmq'
 port = environ.get('RABBIT_PORT') or 5672
@@ -12,11 +13,19 @@ connection = pika.BlockingConnection(
 )
 
 channel = connection.channel()
+channel.queue_declare(queue='main')
 
 
-def publish():
-    channel.basic_publish(exchange='', routing_key='main', body='helloMain')
+def callback(ch, method, properties, body):
+    print('Received in admin')
+    print(body)
 
 
+channel.basic_consume(queue='admin', on_message_callback=callback)
+
+print('Start consuming')
+
+channel.start_consuming()
 
 
+channel.close()

@@ -7,12 +7,14 @@ import requests
 from flask_migrate import Migrate
 
 app = Flask(__name__)
-app.config["SQLALCHEMY_DATABASE_URI"] = 'mysql://root:root@db/main'
-CORS(app)
+app.config["SQLALCHEMY_DATABASE_URI"] = 'mysql://root:root@main_db/main'
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
 
 # https://www.youtube.com/watch?v=uNmWxvvyBGU
 migrate = Migrate(app, db)
+
+CORS(app)
 
 
 class Product(db.Model):
@@ -25,7 +27,6 @@ class ProductUser(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer)
     product_id = db.Column(db.Integer)
-
     UniqueConstraint('user_id', 'product_id', name='user_product_unique')
 
 

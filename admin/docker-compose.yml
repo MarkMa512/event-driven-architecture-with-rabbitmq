@@ -27,7 +27,7 @@ services:
     depends_on:
       - rabbitmq
 
-  backend:
+  admin_backend:
     container_name: admin_backend
     restart: always
     build:
@@ -48,11 +48,10 @@ services:
       - db
       - rabbitmq
 
-#  queue:
-#    build:
-#      context: .
-#      dockerfile: Dockerfile
-#    command: 'python -u consumer.py'
-#    depends_on:
-#      - db
-
+  queue:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: 'python -u consumer.py'
+    depends_on:
+      - db

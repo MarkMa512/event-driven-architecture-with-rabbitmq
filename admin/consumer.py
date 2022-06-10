@@ -1,5 +1,4 @@
 from os import environ
-
 import pika
 
 hostname = environ.get('RABBIT_HOST') or 'rabbitmq'
@@ -16,16 +15,16 @@ channel = connection.channel()
 channel.queue_declare(queue='admin')
 
 
-def callback():
+def callback(ch, method, properties, body):
     print('Received in admin')
-    return 'Callback!'
+    print(body)
 
 
-channel.basic_consume(queue='admin', on_message_callback=callback())
+channel.basic_consume(queue='admin', on_message_callback=callback)
 
 print('Start consuming')
 
 channel.start_consuming()
 
 
-# channel.close()
+channel.close()
